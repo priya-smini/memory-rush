@@ -8,10 +8,11 @@ import { useTimer } from "../hooks/useTimer";
 import Header from "./Header";
 
 export default function GameBoard() {
-  const { level, setLevel } = useGameStore();
+  const { level, setLevel, loadLevel } = useGameStore();
   const [settings, setSettings] = useState(getLevelSetting(level));
   const [cards, setCards] = useState(generateCards(settings));
   const [flipped, setFlipped] = useState<number[]>([]);
+
   const { timeLeft, resetTimer, restartTimer } = useTimer(
     settings.timeLimit,
     () => {
@@ -21,26 +22,28 @@ export default function GameBoard() {
     }
   );
 
+  //load level from local storage if present on first mount
+  useEffect(() => {
+    loadLevel();
+  }, []);
+
+  // Check if all cards matched → increase level
   useEffect(() => {
     const allMatched = cards.every((card) => card.isMatched);
     if (allMatched && cards.length > 0) {
       setTimeout(() => {
         alert(`🎉 Level ${level} Complete!`);
         setLevel(level + 1);
+        // set the new level in the local storage
+        // localStorage.setItem("level", `${level + 1}`);
       }, 1000);
     }
   }, [cards]);
 
+  // Watch for level changes & update settings/cards
   useEffect(() => {
-    console.log(
-      "level useeffect called with timelest and level " +
-        level +
-        " -> " +
-        settings.timeLimit
-    );
     setSettings(getLevelSetting(level));
     setCards(generateCards(getLevelSetting(level)));
-    console.log("changes level");
     restartTimer(settings.timeLimit); // restart timer
   }, [level]);
 
